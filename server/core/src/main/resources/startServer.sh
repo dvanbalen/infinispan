@@ -12,6 +12,7 @@ add_classpath ${ISPN_HOME}/modules/websocket/runtime-classpath.txt
 add_classpath ${ISPN_HOME}/modules/cli-server/runtime-classpath.txt
 
 add_jvm_args $JVM_PARAMS
+add_jvm_args $LOG4J_CONFIG
 add_jvm_args '-Djava.net.preferIPv4Stack=true'
 
 # RHQ monitoring options
