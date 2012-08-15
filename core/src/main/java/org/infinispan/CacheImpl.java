@@ -629,12 +629,31 @@ public class CacheImpl<K, V> extends CacheSupport<K, V> implements AdvancedCache
    }
 
    /**
+    * Returns the simple cache name. If this is the default cache, it returns a more friendly name.
+    */
+   @ManagedAttribute(description = "Returns the simple cache name")
+   @Metric(displayName = "Simple Cache Name", dataType = DataType.TRAIT, displayType = DisplayType.SUMMARY)
+   public String getSimpleCacheName() {
+      String name = getName().equals(CacheContainer.DEFAULT_CACHE_NAME) ? "Default Cache" : getName();
+      return name;
+   }
+
+   /**
     * Returns the cache configuration as XML string.
     */
    @ManagedAttribute(description = "Returns the cache configuration as XML string")
    @Metric(displayName = "Cache configuration (XML)", dataType = DataType.TRAIT, displayType = DisplayType.SUMMARY)
    public String getConfigurationAsXmlString() {
       return getConfiguration().toXmlString();
+   }
+
+   /**
+    * Returns the cache configuration as XML string.
+    */
+   @ManagedAttribute(description = "Returns the configured number of owners")
+   @Metric(displayName = "Configured number of owners", dataType = DataType.TRAIT, displayType = DisplayType.SUMMARY)
+   public String getNumOwners() {
+      return Integer.toString(getConfiguration().getNumOwners());
    }
 
    @Override
