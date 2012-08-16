@@ -135,7 +135,7 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
         if (useAgent) {
             try {
                 size = Libra.getDeepObjectSize(obj);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 toggleMeasurementType();
                 log.info(
                         "Unable to get object size using Libra, so reverting to object count. To track object size, make sure JBoss Libra is on the system classpath, or the server is started with -javaagent:<path-to-libra>",
