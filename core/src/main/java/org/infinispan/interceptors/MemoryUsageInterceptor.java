@@ -57,7 +57,7 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
         Map<Object, Object> data = command.getMap();
         Object retval = invokeNextInterceptor(ctx, command);
         if (data != null && !data.isEmpty() && command.isSuccessful()) {
-            for(Entry<Object, Object> entry : data.entrySet()) {
+            for (Entry<Object, Object> entry : data.entrySet()) {
                 handleAddOrUpdate(entry.getKey(), entry.getValue());
             }
         }
@@ -67,7 +67,7 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
     @Override
     public Object visitEvictCommand(InvocationContext ctx, EvictCommand command) throws Throwable {
         Object retval = invokeNextInterceptor(ctx, command);
-        if(command.isSuccessful()) {
+        if (command.isSuccessful()) {
             handleRemove(command.getKey());
         }
         return retval;
@@ -76,7 +76,7 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
     @Override
     public Object visitRemoveCommand(InvocationContext ctx, RemoveCommand command) throws Throwable {
         Object retval = invokeNextInterceptor(ctx, command);
-        if(command.isSuccessful() && retval!=null) {
+        if (command.isSuccessful() && retval != null) {
             handleRemove(command.getKey());
         }
         return retval;
@@ -84,11 +84,11 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
 
     @Override
     public Object visitClearCommand(InvocationContext ctx, ClearCommand command) throws Throwable {
-       Object retval = invokeNextInterceptor(ctx, command);
-       if(command.isSuccessful()) {
-           reset();
-       }
-       return retval;
+        Object retval = invokeNextInterceptor(ctx, command);
+        if (command.isSuccessful()) {
+            reset();
+        }
+        return retval;
     }
 
     @ManagedAttribute(description = "string representation of memory usage, or object count, per object type")
@@ -137,9 +137,9 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
                 size = Libra.getDeepObjectSize(obj);
             } catch (Throwable e) {
                 toggleMeasurementType();
-                log.info(
-                        "Unable to get object size using Libra, so reverting to object count. To track object size, make sure JBoss Libra is on the system classpath, or the server is started with -javaagent:<path-to-libra>",
-                        e);
+                log.infof(
+                        "Unable to get object size using Libra, so reverting to object count. To track object size, make sure JBoss Libra is on the system classpath, or the server is started with -javaagent:<path-to-libra>. Error was: %s",
+                        e.toString());
                 if (debug)
                     e.printStackTrace();
             }
@@ -148,58 +148,58 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
         if (!useAgent) {
             size = 1L;
         }
-        
-        if(trace)
+
+        if (trace)
             log.tracef("Calculated size for object '%s' is '%d'", obj.toString(), size);
 
         return size;
     }
-    
+
     private void handleAddOrUpdate(Object key, Object value) {
         Long size = 0L;
         Long oldSize = 0L;
         MemoryUsageKeyEntry keyEntry = null;
         String objType = value.getClass().getName();
-        
+
         size = getMemoryUsage(value);
-        
-        if(trace)
+
+        if (trace)
             log.tracef("Handling add or update for value with key '%s', size '%d' and type '%s'.", key.toString(), size, objType);
-        
+
         // Initialize map entry for object type, if necessary
-        if(!usageMap.containsKey(objType)) {
-            if(trace)
+        if (!usageMap.containsKey(objType)) {
+            if (trace)
                 log.tracef("Initializing map entry for object type '%s'.", objType);
             usageMap.put(objType, new AtomicLong(0));
         }
-        
+
         // Now that usageMap entry should have been initialized, print trace info.
-        if(trace)
+        if (trace)
             log.tracef("Total size BEFORE object add or update is '%d' and size for type '%s' is now '%d'.", totalSize.get(), objType, usageMap.get(objType).get());
-        
+
         // If value is being updated for existing key, previous value should be subtracted
-        if(sizeMap.containsKey(key)) {
+        if (sizeMap.containsKey(key)) {
             keyEntry = sizeMap.get(key);
             oldSize = keyEntry.getSize().get();
             // Update stored size value for key
             keyEntry.getSize().set(size);
             // Subtract key's previous stored size value from running totals
-            usageMap.get(objType).getAndAdd(0-oldSize);
-            totalSize.getAndAdd(0-oldSize);
-            if(trace)
+            usageMap.get(objType).getAndAdd(0 - oldSize);
+            totalSize.getAndAdd(0 - oldSize);
+            if (trace)
                 log.tracef("Updating memory usage for key '%s'. Subtracting '%d' from size.", key.toString(), oldSize);
         } else { // store size value for new cache entry
-            if(trace)
+            if (trace)
                 log.tracef("Tracking new cache entry with key '%s', type '%s' and size '%d'", key.toString(), objType, size);
             keyEntry = new MemoryUsageKeyEntry(key, objType, size);
             sizeMap.put(key, keyEntry);
         }
-        
+
         // Add new size to running totals
         usageMap.get(objType).getAndAdd(size);
         totalSize.getAndAdd(size);
-        
-        if(trace)
+
+        if (trace)
             log.tracef("Total size AFTER object add or update is '%d' and size for type '%s' is now '%d'.", totalSize.get(), objType, usageMap.get(objType).get());
     }
 
@@ -207,44 +207,44 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
         MemoryUsageKeyEntry keyEntry = null;
         String objType;
         Long size = 0L;
-        
-        if(trace)
+
+        if (trace)
             log.tracef("In handleRemove for key '%s'", key.toString());
-        
-        if(sizeMap.containsKey(key)) {
-            if(trace)
+
+        if (sizeMap.containsKey(key)) {
+            if (trace)
                 log.tracef("Before remove, sizeMap has '%d' entries.", sizeMap.size());
-            
+
             // stop tracking removed entry
             keyEntry = sizeMap.get(key);
             objType = keyEntry.getType();
             size = keyEntry.getSize().get();
             sizeMap.remove(key);
-            
-            if(trace)
+
+            if (trace)
                 log.tracef("After remove, sizeMap has '%d' entries.", sizeMap.size());
-            
-            if(trace)
+
+            if (trace)
                 log.tracef("Handling remove for object with key '%s', type '%s' and size '%d'", key.toString(), objType, size);
-            if(trace)
+            if (trace)
                 log.tracef("Total size BEFORE object remove is '%d' and size for type '%s' is now '%d'.", totalSize.get(), objType, usageMap.get(objType).get());
         } else {
-            if(debug)
+            if (debug)
                 log.debugf("Was asked to process removal of entry with key '%s', which isn't being tracked. Doing nothing.", key.toString());
             return;
         }
-        
-        if(usageMap.containsKey(objType)) {
+
+        if (usageMap.containsKey(objType)) {
             // subtract size of removed entry from running totals
-            usageMap.get(objType).getAndAdd(0-size);
-            totalSize.getAndAdd(0-size);
+            usageMap.get(objType).getAndAdd(0 - size);
+            totalSize.getAndAdd(0 - size);
         } else {
-            if(debug)
+            if (debug)
                 log.debugf("Was asked to process removal of entry with key '%s' and of type '%s', but that type isn't being tracked. Total for type will not be decremented.", key.toString(), objType);
             return;
         }
-        
-        if(trace)
+
+        if (trace)
             log.tracef("Total size AFTER object remove is '%d' and size for type '%s' is now '%d'.", totalSize.get(), objType, usageMap.get(objType).get());
     }
 
