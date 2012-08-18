@@ -80,6 +80,13 @@
                       </xs:annotation>
                     </xs:element>
                   </xs:sequence>
+                  <xs:attribute name="trackMemoryUsage" type="xs:boolean">
+                   <xs:annotation>
+                     <xs:documentation>
+                       If true, statistics regarding the total amount of memory being used by the cache, as well as memory usage per object type being stored in the cache, will be tracked and exposed through JMX.
+                     </xs:documentation>
+                   </xs:annotation>
+                  </xs:attribute>
                   <xs:attribute name="allowDuplicateDomains" type="xs:boolean">
                    <xs:annotation>
                      <xs:documentation>

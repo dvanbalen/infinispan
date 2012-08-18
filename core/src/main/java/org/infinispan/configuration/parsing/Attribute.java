@@ -122,6 +122,7 @@ public enum Attribute {
     THREAD_POLICY("threadPolicy"),
     THREAD_POOL_SIZE("threadPoolSize"),
     TIMEOUT("timeout"),
+    TRACK_MEMORY_USAGE("trackMemoryUsage"),
     TRANSACTION_MANAGER_LOOKUP_CLASS("transactionManagerLookupClass"),
     TRANSACTION_MODE("transactionMode"),
     TRANSPORT_CLASS("transportClass"),

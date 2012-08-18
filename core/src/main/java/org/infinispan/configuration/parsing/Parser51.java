@@ -594,6 +594,10 @@ public class Parser51 implements ConfigurationParser<ConfigurationBuilderHolder>
          String value = replaceProperties(reader.getAttributeValue(i));
          Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
          switch (attribute) {
+            case TRACK_MEMORY_USAGE: {
+               builder.jmxStatistics().trackMemoryUsage(Boolean.valueOf(value));
+               break;
+            }
             case ENABLED:
                if (Boolean.parseBoolean(value))
                   builder.jmxStatistics().enable();

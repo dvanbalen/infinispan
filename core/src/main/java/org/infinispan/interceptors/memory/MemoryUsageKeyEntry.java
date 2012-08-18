@@ -2,6 +2,12 @@ package org.infinispan.interceptors.memory;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Used by MemoryUsageInterceptor to keep track of space occupied by each value in cache
+ *
+ * @author David van Balen
+ * @since 5.1
+ */
 public class MemoryUsageKeyEntry {
     
     private Object key;

@@ -27,6 +27,7 @@ package org.infinispan.configuration.cache;
 public class JMXStatisticsConfigurationBuilder extends AbstractConfigurationChildBuilder<JMXStatisticsConfiguration> {
 
    private boolean enabled = false;
+   private Boolean trackMemoryUsage = false;
 
    JMXStatisticsConfigurationBuilder(ConfigurationBuilder builder) {
       super(builder);
@@ -56,18 +57,34 @@ public class JMXStatisticsConfigurationBuilder extends AbstractConfigurationChil
       return this;
    }
 
+   /**
+    * Enable or disable tracking of memory usage statistics
+    */
+   public JMXStatisticsConfigurationBuilder trackMemoryUsage(boolean trackMemoryUsage) {
+      this.trackMemoryUsage = trackMemoryUsage;
+      return this;
+   }
+
+   /**
+    * Enable or disable tracking of memory usage statistics
+    */
+   public boolean trackMemoryUsage() {
+      return this.trackMemoryUsage;
+   }
+
    @Override
    public void validate() {
    }
 
    @Override
    public JMXStatisticsConfiguration create() {
-      return new JMXStatisticsConfiguration(enabled);
+      return new JMXStatisticsConfiguration(enabled, trackMemoryUsage);
    }
 
    @Override
    public JMXStatisticsConfigurationBuilder read(JMXStatisticsConfiguration template) {
       this.enabled = template.enabled();
+      this.trackMemoryUsage = template.trackMemoryUsage();
 
       return this;
    }
@@ -76,6 +93,7 @@ public class JMXStatisticsConfigurationBuilder extends AbstractConfigurationChil
    public String toString() {
       return "JMXStatisticsConfigurationBuilder{" +
             "enabled=" + enabled +
+            "trackMemoryUsage=" + trackMemoryUsage +
             '}';
    }
 

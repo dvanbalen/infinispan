@@ -27,24 +27,32 @@ package org.infinispan.configuration.cache;
 public class JMXStatisticsConfiguration {
 
    private final boolean enabled;
+   private final Boolean trackMemoryUsage;
 
    /**
     * Enable or disable statistics gathering and reporting
     * 
     * @param enabled
+    * @param trackMemoryUsage
     */
-   JMXStatisticsConfiguration(boolean enabled) {
+   JMXStatisticsConfiguration(boolean enabled, boolean trackMemoryUsage) {
       this.enabled = enabled;
+      this.trackMemoryUsage = trackMemoryUsage;
    }
    
    public boolean enabled() {
       return enabled;
    }
 
+   public boolean trackMemoryUsage() {
+      return trackMemoryUsage;
+   }
+
    @Override
    public String toString() {
       return "JMXStatisticsConfiguration{" +
             "enabled=" + enabled +
+            "trackMemoryUsage=" + trackMemoryUsage +
             '}';
    }
 
@@ -56,6 +64,7 @@ public class JMXStatisticsConfiguration {
       JMXStatisticsConfiguration that = (JMXStatisticsConfiguration) o;
 
       if (enabled != that.enabled) return false;
+      if (trackMemoryUsage != that.trackMemoryUsage) return false;
 
       return true;
    }

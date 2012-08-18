@@ -24,6 +24,12 @@ import org.rhq.helpers.pluginAnnotations.agent.MeasurementType;
 import org.rhq.helpers.pluginAnnotations.agent.Metric;
 import org.rhq.helpers.pluginAnnotations.agent.Operation;
 
+/**
+ * Captures memory usage statistics
+ *
+ * @author David van Balen
+ * @since 5.1
+ */
 @MBean(objectName = "MemoryUsage", description = "Measures memory usage for cache, either through JBoss Libra Java Agent or by simple object counts")
 public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
 
