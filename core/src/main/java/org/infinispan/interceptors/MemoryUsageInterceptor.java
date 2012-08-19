@@ -24,12 +24,6 @@ import org.rhq.helpers.pluginAnnotations.agent.MeasurementType;
 import org.rhq.helpers.pluginAnnotations.agent.Metric;
 import org.rhq.helpers.pluginAnnotations.agent.Operation;
 
-/**
- * Captures memory usage statistics
- *
- * @author David van Balen
- * @since 5.1
- */
 @MBean(objectName = "MemoryUsage", description = "Measures memory usage for cache, either through JBoss Libra Java Agent or by simple object counts")
 public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
 
@@ -51,7 +45,8 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
 
         Object retval = invokeNextInterceptor(ctx, command);
         if (trace)
-            log.trace("PUTKEYVALUE value is '" + command.getValue() + "' and of type '" + command.getValue().getClass().getName() + "'.");
+            log.tracef("In visitPutKeyValueCommand with value of '%s' and of type '%s'.", command.getValue().toString(), ((command.getValue()!=null)?command.getValue().getClass().getName():"null"));
+
         if (command.isSuccessful()) {
             handleAddOrUpdate(command.getKey(), command.getValue());
         }
@@ -62,8 +57,14 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
     public Object visitPutMapCommand(InvocationContext ctx, PutMapCommand command) throws Throwable {
         Map<Object, Object> data = command.getMap();
         Object retval = invokeNextInterceptor(ctx, command);
+        if(trace)
+                log.tracef("In visitPutMapCommand with map: '%s'.", data.toString());
+
         if (data != null && !data.isEmpty() && command.isSuccessful()) {
             for (Entry<Object, Object> entry : data.entrySet()) {
+                if (trace)
+                    log.tracef("In visitPutMapCommand with value of '%s' and of type '%s'.", entry.getValue().toString(), ((entry.getValue()!=null)?entry.getValue().getClass().getName():"null"));
+
                 handleAddOrUpdate(entry.getKey(), entry.getValue());
             }
         }
@@ -73,6 +74,9 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
     @Override
     public Object visitEvictCommand(InvocationContext ctx, EvictCommand command) throws Throwable {
         Object retval = invokeNextInterceptor(ctx, command);
+        if(trace)
+                log.tracef("In visitEvictCommand with key: '%s'.", command.getKey().toString());
+
         if (command.isSuccessful()) {
             handleRemove(command.getKey());
         }
@@ -82,6 +86,9 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
     @Override
     public Object visitRemoveCommand(InvocationContext ctx, RemoveCommand command) throws Throwable {
         Object retval = invokeNextInterceptor(ctx, command);
+        if(trace)
+                log.tracef("In visitRemoveCommand with key: '%s'.", command.getKey().toString());
+
         if (command.isSuccessful() && retval != null) {
             handleRemove(command.getKey());
         }
@@ -91,6 +98,9 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
     @Override
     public Object visitClearCommand(InvocationContext ctx, ClearCommand command) throws Throwable {
         Object retval = invokeNextInterceptor(ctx, command);
+        if(trace)
+                log.tracef("In visitClearCommand.");
+
         if (command.isSuccessful()) {
             reset();
         }
