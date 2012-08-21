@@ -5,12 +5,18 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.infinispan.notifications.Listener;
+import org.infinispan.notifications.cachelistener.annotation.CacheEntriesEvicted;
+import org.infinispan.notifications.cachelistener.event.CacheEntriesEvictedEvent;
+import org.infinispan.notifications.cachelistener.CacheNotifier;
 import org.infinispan.commands.write.ClearCommand;
 import org.infinispan.commands.write.EvictCommand;
 import org.infinispan.commands.write.PutKeyValueCommand;
 import org.infinispan.commands.write.PutMapCommand;
 import org.infinispan.commands.write.RemoveCommand;
 import org.infinispan.context.InvocationContext;
+import org.infinispan.factories.annotations.Inject;
+import org.infinispan.factories.annotations.Start;
 import org.infinispan.interceptors.base.JmxStatsCommandInterceptor;
 import org.infinispan.interceptors.memory.MemoryUsageKeyEntry;
 import org.infinispan.jmx.annotations.MBean;
@@ -24,6 +30,7 @@ import org.rhq.helpers.pluginAnnotations.agent.MeasurementType;
 import org.rhq.helpers.pluginAnnotations.agent.Metric;
 import org.rhq.helpers.pluginAnnotations.agent.Operation;
 
+@Listener
 @MBean(objectName = "MemoryUsage", description = "Measures memory usage for cache, either through JBoss Libra Java Agent or by simple object counts")
 public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
 
@@ -39,6 +46,18 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
     private static final Log log = LogFactory.getLog(MemoryUsageInterceptor.class);
     private static boolean debug = log.isDebugEnabled();
     private static boolean trace = log.isTraceEnabled();
+
+    private CacheNotifier cacheNotifier = null;
+
+    @Inject
+    public void init(CacheNotifier cacheNotifier) {
+        this.cacheNotifier = cacheNotifier;
+    }
+
+    @Start
+    public void start() {
+        cacheNotifier.addListener(this);
+    }
 
     // Map.put(key,value) :: oldValue
     public Object visitPutKeyValueCommand(InvocationContext ctx, PutKeyValueCommand command) throws Throwable {
@@ -105,6 +124,18 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
             reset();
         }
         return retval;
+    }
+
+    @CacheEntriesEvicted
+    public void handleEvictions(CacheEntriesEvictedEvent<?, ?> event) {
+        if(!event.isPre()) {
+            if(trace)
+                log.tracef("In handleEvictions with '%d' entries to be evicted", event.getEntries().size());
+                for(Entry<?, ?> e : event.getEntries().entrySet()) {
+                    log.tracef("Handling eviction of entry with key '%s'", e.getKey().toString());
+                    handleRemove(e.getKey());
+                }
+        }
     }
 
     @ManagedAttribute(description = "string representation of memory usage, or object count, per object type")

@@ -22,6 +22,10 @@
  */
 package org.infinispan.interceptors;
 
+import org.infinispan.notifications.Listener;
+import org.infinispan.notifications.cachelistener.annotation.CacheEntriesEvicted;
+import org.infinispan.notifications.cachelistener.event.CacheEntriesEvictedEvent;
+import org.infinispan.notifications.cachelistener.CacheNotifier;
 import org.infinispan.commands.read.GetKeyValueCommand;
 import org.infinispan.commands.write.EvictCommand;
 import org.infinispan.commands.write.PutKeyValueCommand;
@@ -30,6 +34,7 @@ import org.infinispan.commands.write.RemoveCommand;
 import org.infinispan.container.DataContainer;
 import org.infinispan.context.InvocationContext;
 import org.infinispan.factories.annotations.Inject;
+import org.infinispan.factories.annotations.Start;
 import org.infinispan.interceptors.base.JmxStatsCommandInterceptor;
 import org.infinispan.jmx.annotations.MBean;
 import org.infinispan.jmx.annotations.ManagedAttribute;
@@ -43,6 +48,7 @@ import org.rhq.helpers.pluginAnnotations.agent.Operation;
 import org.rhq.helpers.pluginAnnotations.agent.Units;
 
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -52,6 +58,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Jerry Gauthier
  * @since 4.0
  */
+@Listener
 @MBean(objectName = "Statistics", description = "General statistics such as timings, hit/miss ratio, etc.")
 public class CacheMgmtInterceptor extends JmxStatsCommandInterceptor {
    private final AtomicLong hitTimes = new AtomicLong(0);
@@ -69,6 +76,10 @@ public class CacheMgmtInterceptor extends JmxStatsCommandInterceptor {
    private DataContainer dataContainer;
 
    private static final Log log = LogFactory.getLog(CacheMgmtInterceptor.class);
+   private static boolean debug = log.isDebugEnabled();
+   private static boolean trace = log.isTraceEnabled();
+
+    private CacheNotifier cacheNotifier = null;
 
    @Override
    protected Log getLog() {
@@ -77,9 +88,15 @@ public class CacheMgmtInterceptor extends JmxStatsCommandInterceptor {
 
    @Inject
    @SuppressWarnings("unused")
-   public void setDependencies(DataContainer dataContainer) {
+   public void setDependencies(DataContainer dataContainer, CacheNotifier cacheNotifier) {
       this.dataContainer = dataContainer;
+      this.cacheNotifier = cacheNotifier;
    }
+
+    @Start
+    public void start() {
+        cacheNotifier.addListener(this);
+    }
 
    @Override
    public Object visitEvictCommand(InvocationContext ctx, EvictCommand command) throws Throwable {
@@ -87,6 +104,18 @@ public class CacheMgmtInterceptor extends JmxStatsCommandInterceptor {
       evictions.incrementAndGet();
       return returnValue;
    }
+
+    @CacheEntriesEvicted
+    public void handleEvictions(CacheEntriesEvictedEvent<?, ?> event) {
+        if(!event.isPre()) {
+            if(trace)
+                log.tracef("In handleEvictions with '%d' entries to be evicted", event.getEntries().size());
+                for(Entry<?, ?> e : event.getEntries().entrySet()) {
+                    log.tracef("Handling eviction of entry with key '%s'", e.getKey().toString());
+                    evictions.incrementAndGet();
+                }
+        }
+    }
 
    @Override
    public Object visitGetKeyValueCommand(InvocationContext ctx, GetKeyValueCommand command) throws Throwable {
