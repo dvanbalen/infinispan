@@ -200,6 +200,13 @@ public interface CommandsFactory {
    EvictCommand buildEvictCommand(Object key);
 
    /**
+    * Builds an ExpireCommand
+    * @param key key to expire
+    * @return an ExpireCommand
+    */
+   ExpireCommand buildExpireCommand(Collection<InternalCacheEntry> entries);
+
+   /**
     * Builds a PrepareCommand
     * @param gtx global transaction associated with the prepare
     * @param modifications list of modifications

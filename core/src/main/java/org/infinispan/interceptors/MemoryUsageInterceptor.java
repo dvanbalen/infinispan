@@ -7,10 +7,13 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachelistener.annotation.CacheEntriesEvicted;
+import org.infinispan.notifications.cachelistener.annotation.CacheEntriesExpired;
 import org.infinispan.notifications.cachelistener.event.CacheEntriesEvictedEvent;
+import org.infinispan.notifications.cachelistener.event.CacheEntriesExpiredEvent;
 import org.infinispan.notifications.cachelistener.CacheNotifier;
 import org.infinispan.commands.write.ClearCommand;
 import org.infinispan.commands.write.EvictCommand;
+import org.infinispan.commands.write.ExpireCommand;
 import org.infinispan.commands.write.PutKeyValueCommand;
 import org.infinispan.commands.write.PutMapCommand;
 import org.infinispan.commands.write.RemoveCommand;
@@ -98,8 +101,23 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
 
         if (command.isSuccessful()) {
             handleRemove(command.getKey());
+        } else {
+        	if(trace)
+        		log.tracef("Expire command wasn't successful.");
         }
         return retval;
+    }
+    
+    @Override
+    public Object visitExpireCommand(InvocationContext ctx, ExpireCommand command) throws Throwable {
+    	Object retval = invokeNextInterceptor(ctx, command);
+    	if(trace)
+    		log.tracef("In visitExpireCommand with key: '%s'.", command.getKey());
+    	
+    	if(command.isSuccessful()) {
+    		handleRemove(command.getKey());
+    	}
+    	return retval;
     }
 
     @Override
@@ -128,14 +146,32 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
 
     @CacheEntriesEvicted
     public void handleEvictions(CacheEntriesEvictedEvent<?, ?> event) {
+    	if(trace)
+    		log.tracef("In handleEvictions.");
         if(!event.isPre()) {
             if(trace)
-                log.tracef("In handleEvictions with '%d' entries to be evicted", event.getEntries().size());
+                log.tracef("There are '%d' entries to be evicted", event.getEntries().size());
                 for(Entry<?, ?> e : event.getEntries().entrySet()) {
-                    log.tracef("Handling eviction of entry with key '%s'", e.getKey().toString());
+                	if(trace)
+                		log.tracef("Handling eviction of entry with key '%s'", e.getKey().toString());
                     handleRemove(e.getKey());
                 }
         }
+    }
+    
+    @CacheEntriesExpired
+    public void handleExpirations(CacheEntriesExpiredEvent<?, ?> event) {
+    	if(trace)
+    		log.tracef("In handleExpirations.");
+    	if(!event.isPre()) {
+    		if(trace)
+    			log.tracef("There are '%d' entries being expired.", event.getEntries().size());
+    		for(Entry<?, ?> e : event.getEntries().entrySet()) {
+    			if(trace)
+    				log.tracef("Handling expiration of entry with key '%s'", e.getKey().toString());
+    			handleRemove(e.getKey());
+    		}
+    	}
     }
 
     @ManagedAttribute(description = "string representation of memory usage, or object count, per object type")

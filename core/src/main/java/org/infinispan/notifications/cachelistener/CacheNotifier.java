@@ -62,6 +62,11 @@ public interface CacheNotifier extends Listenable {
    void notifyCacheEntryVisited(Object key, Object value, boolean pre, InvocationContext ctx);
 
    /**
+    * Notifies all registered listeners of a CacheEntriesExpired event.
+    */
+   void notifyCacheEntriesExpired(Collection<InternalCacheEntry> entries, InvocationContext ctx);
+
+   /**
     * Notifies all registered listeners of a CacheEntriesEvicted event.
     */
    void notifyCacheEntriesEvicted(Collection<InternalCacheEntry> entries, InvocationContext ctx);

@@ -49,6 +49,7 @@ import org.infinispan.commands.tx.VersionedPrepareCommand;
 import org.infinispan.commands.write.ApplyDeltaCommand;
 import org.infinispan.commands.write.ClearCommand;
 import org.infinispan.commands.write.EvictCommand;
+import org.infinispan.commands.write.ExpireCommand;
 import org.infinispan.commands.write.InvalidateCommand;
 import org.infinispan.commands.write.InvalidateL1Command;
 import org.infinispan.commands.write.PutKeyValueCommand;
@@ -251,6 +252,11 @@ public class CommandsFactoryImpl implements CommandsFactory {
    @Override
    public EvictCommand buildEvictCommand(Object key) {
       return new EvictCommand(key, notifier);
+   }
+
+   @Override
+   public ExpireCommand buildExpireCommand(Collection<InternalCacheEntry> entries) {
+      return new ExpireCommand(entries, notifier);
    }
 
    @Override

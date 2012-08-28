@@ -176,4 +176,19 @@ public class EvictionManagerImpl implements EvictionManager {
       // call to carry on taking an InvocationContext object.
       cacheNotifier.notifyCacheEntriesEvicted(evicted.values(), ctx);
    }
+   
+   @Override
+   public void onEntryExpiration(Map<Object, InternalCacheEntry> expired) {
+	      // don't reuse the threadlocal context as we don't want to include eviction
+	      // operations in any ongoing transaction, nor be affected by flags
+	      // especially see ISPN-1154: it's illegal to acquire locks in a committing transaction
+	      InvocationContext ctx = ImmutableContext.INSTANCE;
+	      // This is important because we make no external guarantees on the thread
+	      // that will execute this code, so it could be the user thread, or could
+	      // be the eviction thread.
+	      // However, when a user calls cache.evict(), you do want to carry over the
+	      // contextual information, hence it makes sense for the notifyyCacheEntriesEvicted()
+	      // call to carry on taking an InvocationContext object.
+	      cacheNotifier.notifyCacheEntriesExpired(expired.values(), ctx);
+   }
 }

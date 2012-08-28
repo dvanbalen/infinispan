@@ -24,7 +24,9 @@ package org.infinispan.interceptors;
 
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachelistener.annotation.CacheEntriesEvicted;
+import org.infinispan.notifications.cachelistener.annotation.CacheEntriesExpired;
 import org.infinispan.notifications.cachelistener.event.CacheEntriesEvictedEvent;
+import org.infinispan.notifications.cachelistener.event.CacheEntriesExpiredEvent;
 import org.infinispan.notifications.cachelistener.CacheNotifier;
 import org.infinispan.commands.read.GetKeyValueCommand;
 import org.infinispan.commands.write.EvictCommand;
@@ -68,6 +70,7 @@ public class CacheMgmtInterceptor extends JmxStatsCommandInterceptor {
    private final AtomicLong misses = new AtomicLong(0);
    private final AtomicLong stores = new AtomicLong(0);
    private final AtomicLong evictions = new AtomicLong(0);
+   private final AtomicLong expirations = new AtomicLong(0);
    private final AtomicLong startNanoseconds = new AtomicLong(System.nanoTime());
    private final AtomicLong resetNanoseconds = new AtomicLong(startNanoseconds.get());
    private final AtomicLong removeHits = new AtomicLong(0);
@@ -105,17 +108,31 @@ public class CacheMgmtInterceptor extends JmxStatsCommandInterceptor {
       return returnValue;
    }
 
-    @CacheEntriesEvicted
-    public void handleEvictions(CacheEntriesEvictedEvent<?, ?> event) {
-        if(!event.isPre()) {
-            if(trace)
-                log.tracef("In handleEvictions with '%d' entries to be evicted", event.getEntries().size());
-                for(Entry<?, ?> e : event.getEntries().entrySet()) {
-                    log.tracef("Handling eviction of entry with key '%s'", e.getKey().toString());
-                    evictions.incrementAndGet();
-                }
-        }
-    }
+   @CacheEntriesEvicted
+   public void handleEvictions(CacheEntriesEvictedEvent<?, ?> event) {
+       if(!event.isPre()) {
+           if(trace)
+               log.tracef("In handleEvictions with '%d' entries to be evicted", event.getEntries().size());
+               for(Entry<?, ?> e : event.getEntries().entrySet()) {
+            	   if(trace)
+            		   log.tracef("Handling eviction of entry with key '%s'", e.getKey().toString());
+                   evictions.incrementAndGet();
+               }
+       }
+   }
+
+   @CacheEntriesExpired
+   public void handleExpirations(CacheEntriesExpiredEvent<?, ?> event) {
+       if(!event.isPre()) {
+           if(trace)
+               log.tracef("In handleExpirations with '%d' entries to be expired", event.getEntries().size());
+               for(Entry<?, ?> e : event.getEntries().entrySet()) {
+            	   if(trace)
+            		   log.tracef("Handling expiration of entry with key '%s'", e.getKey().toString());
+                   expirations.incrementAndGet();
+               }
+       }
+   }
 
    @Override
    public Object visitGetKeyValueCommand(InvocationContext ctx, GetKeyValueCommand command) throws Throwable {
@@ -212,6 +229,12 @@ public class CacheMgmtInterceptor extends JmxStatsCommandInterceptor {
       return evictions.get();
    }
 
+   @ManagedAttribute(description = "Number of cache expiration operations")
+   @Metric(displayName = "Number of cache expirations", measurementType = MeasurementType.TRENDSUP, displayType = DisplayType.SUMMARY)
+   public long getExpirations() {
+      return expirations.get();
+   }
+
    @ManagedAttribute(description = "Percentage hit/(hit+miss) ratio for the cache")
    @Metric(displayName = "Hit ratio", units = Units.PERCENTAGE, displayType = DisplayType.SUMMARY)
    @SuppressWarnings("unused")
@@ -279,6 +302,7 @@ public class CacheMgmtInterceptor extends JmxStatsCommandInterceptor {
       hits.set(0);
       misses.set(0);
       stores.set(0);
+      expirations.set(0);
       evictions.set(0);
       hitTimes.set(0);
       missTimes.set(0);

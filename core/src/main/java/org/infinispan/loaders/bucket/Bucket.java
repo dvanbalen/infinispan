@@ -27,6 +27,7 @@ import org.infinispan.io.UnsignedNumeric;
 import org.infinispan.marshall.AbstractExternalizer;
 import org.infinispan.marshall.Ids;
 import org.infinispan.util.Util;
+import org.infinispan.factories.annotations.Inject;
 
 import java.io.IOException;
 import java.io.ObjectInput;

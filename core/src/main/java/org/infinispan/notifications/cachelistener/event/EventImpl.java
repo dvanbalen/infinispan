@@ -40,7 +40,7 @@ import java.util.Map;
  * @since 4.0
  */
 @NotThreadSafe
-public class EventImpl<K, V> implements CacheEntryActivatedEvent, CacheEntryCreatedEvent, CacheEntriesEvictedEvent, CacheEntryLoadedEvent, CacheEntryModifiedEvent,
+public class EventImpl<K, V> implements CacheEntryActivatedEvent, CacheEntryCreatedEvent, CacheEntriesEvictedEvent, CacheEntriesExpiredEvent, CacheEntryLoadedEvent, CacheEntryModifiedEvent,
                                         CacheEntryPassivatedEvent, CacheEntryRemovedEvent, CacheEntryVisitedEvent, TransactionCompletedEvent, TransactionRegisteredEvent,
                                   CacheEntryInvalidatedEvent, DataRehashedEvent, TopologyChangedEvent, CacheEntryEvictedEvent {
    private boolean pre = false; // by default events are after the fact

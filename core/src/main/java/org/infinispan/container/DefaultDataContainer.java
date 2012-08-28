@@ -35,15 +35,19 @@ import org.infinispan.util.concurrent.BoundedConcurrentHashMap;
 import org.infinispan.util.concurrent.BoundedConcurrentHashMap.Eviction;
 import org.infinispan.util.concurrent.BoundedConcurrentHashMap.EvictionListener;
 import org.infinispan.util.concurrent.ConcurrentMapFactory;
+import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.LogFactory;
 
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+import static java.util.Collections.unmodifiableMap;
 
 /**
  * DefaultDataContainer is both eviction and non-eviction based data container.
@@ -64,6 +68,9 @@ public class DefaultDataContainer implements DataContainer {
    final protected DefaultEvictionListener evictionListener;
    private EvictionManager evictionManager;
    private PassivationManager passivator;
+   private static Log log = LogFactory.getLog(DefaultDataContainer.class);
+   private boolean debug = log.isDebugEnabled();
+   private boolean trace = log.isTraceEnabled();
 
    public DefaultDataContainer(int concurrencyLevel) {
       entries = ConcurrentMapFactory.makeConcurrentMap(128, concurrencyLevel);
@@ -196,12 +203,20 @@ public class DefaultDataContainer implements DataContainer {
 
    @Override
    public void purgeExpired() {
+	   Map<Object, InternalCacheEntry> purgedEntries = new HashMap<Object, InternalCacheEntry>();
       long currentTimeMillis = System.currentTimeMillis();
       for (Iterator<InternalCacheEntry> purgeCandidates = entries.values().iterator(); purgeCandidates.hasNext();) {
          InternalCacheEntry e = purgeCandidates.next();
          if (e.isExpired(currentTimeMillis)) {
+        	 purgedEntries.put(e.getKey(), e);
             purgeCandidates.remove();
          }
+      }
+      if(!purgedEntries.isEmpty()) {
+    	  if(trace)
+    		  log.tracef("Going to send %d expired entries to evictionManager for notification.", purgedEntries.size());
+	      purgedEntries = unmodifiableMap(purgedEntries);
+	      evictionManager.onEntryExpiration(purgedEntries);
       }
    }
 

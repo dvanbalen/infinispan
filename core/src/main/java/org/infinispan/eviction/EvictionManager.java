@@ -59,4 +59,5 @@ public interface EvictionManager {
    boolean isEnabled();
 
    void onEntryEviction(Map<Object, InternalCacheEntry> evicted);
+   void onEntryExpiration(Map<Object, InternalCacheEntry> expired);
 }

@@ -202,6 +202,7 @@ import java.lang.annotation.Target;
  * @see org.infinispan.notifications.cachelistener.annotation.CacheEntryVisited
  * @see org.infinispan.notifications.cachelistener.annotation.CacheEntryLoaded
  * @see org.infinispan.notifications.cachelistener.annotation.CacheEntriesEvicted
+ * @see org.infinispan.notifications.cachelistener.annotation.CacheEntriesExpired
  * @see org.infinispan.notifications.cachelistener.annotation.CacheEntryActivated
  * @see org.infinispan.notifications.cachelistener.annotation.CacheEntryPassivated
  * @see org.infinispan.notifications.cachemanagerlistener.annotation.ViewChanged
