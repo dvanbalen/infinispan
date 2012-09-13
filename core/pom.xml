@@ -46,7 +46,7 @@
         <dependency>
                 <groupId>org.jboss.libra</groupId>
                 <artifactId>jboss-libra</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
+                <version>0.1.0</version>
                 <scope>provided</scope>
         </dependency>
 

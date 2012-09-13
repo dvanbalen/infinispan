@@ -44,18 +44,16 @@ public class ExpireCommand extends RemoveCommand implements LocalCommand {
 
 	   @Override
 	   public void notify(InvocationContext ctx, Object value, boolean isPre) {
-		   Collection<InternalCacheEntry> entries = null;
+		   Collection<CacheEntry> entries = null;
 		   CacheEntry ce = null;
-		   InternalCacheEntry ice = null;
+		   CacheEntry ice = null;
 		   
 	      if (!isPre) {
 	    	 ce = ctx.lookupEntry(key);
-	    	 if(ce instanceof InternalCacheEntry) {
-	    		 ice = (InternalCacheEntry)ce;
-		    	 entries = new ArrayList<InternalCacheEntry>();
-		    	 entries.add(ice);
-		         notifier.notifyCacheEntriesExpired(entries, ctx);
-	    	 }
+		 ice = (CacheEntry)ce;
+		 entries = new ArrayList<CacheEntry>();
+		 entries.add(ice);
+		 notifier.notifyCacheEntriesExpired(entries, ctx);
 	      }
 	   }
 

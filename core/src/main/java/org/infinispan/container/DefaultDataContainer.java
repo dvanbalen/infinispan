@@ -68,9 +68,8 @@ public class DefaultDataContainer implements DataContainer {
    final protected DefaultEvictionListener evictionListener;
    private EvictionManager evictionManager;
    private PassivationManager passivator;
-   private static Log log = LogFactory.getLog(DefaultDataContainer.class);
-   private boolean debug = log.isDebugEnabled();
-   private boolean trace = log.isTraceEnabled();
+   private static final Log log = LogFactory.getLog(DefaultDataContainer.class);
+   private static final boolean trace = log.isTraceEnabled();
 
    public DefaultDataContainer(int concurrencyLevel) {
       entries = ConcurrentMapFactory.makeConcurrentMap(128, concurrencyLevel);
@@ -203,7 +202,7 @@ public class DefaultDataContainer implements DataContainer {
 
    @Override
    public void purgeExpired() {
-	   Map<Object, InternalCacheEntry> purgedEntries = new HashMap<Object, InternalCacheEntry>();
+      Map<Object, InternalCacheEntry> purgedEntries = new HashMap<Object, InternalCacheEntry>();
       long currentTimeMillis = System.currentTimeMillis();
       for (Iterator<InternalCacheEntry> purgeCandidates = entries.values().iterator(); purgeCandidates.hasNext();) {
          InternalCacheEntry e = purgeCandidates.next();
@@ -216,7 +215,7 @@ public class DefaultDataContainer implements DataContainer {
     	  if(trace)
     		  log.tracef("Going to send %d expired entries to evictionManager for notification.", purgedEntries.size());
 	      purgedEntries = unmodifiableMap(purgedEntries);
-	      evictionManager.onEntryExpiration(purgedEntries);
+	      evictionManager.onEntryExpiration((Map)purgedEntries);
       }
    }
 
@@ -228,7 +227,7 @@ public class DefaultDataContainer implements DataContainer {
    private final class DefaultEvictionListener implements EvictionListener<Object, InternalCacheEntry> {
       @Override
       public void onEntryEviction(Map<Object, InternalCacheEntry> evicted) {
-         evictionManager.onEntryEviction(evicted);
+         evictionManager.onEntryEviction((Map)evicted);
       }
 
       @Override

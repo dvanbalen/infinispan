@@ -26,7 +26,7 @@ import net.jcip.annotations.ThreadSafe;
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.container.DataContainer;
-import org.infinispan.container.entries.InternalCacheEntry;
+import org.infinispan.container.entries.CacheEntry;
 import org.infinispan.context.InvocationContext;
 import org.infinispan.context.impl.ImmutableContext;
 import org.infinispan.factories.KnownComponentNames;
@@ -163,7 +163,7 @@ public class EvictionManagerImpl implements EvictionManager {
    }
 
    @Override
-   public void onEntryEviction(Map<Object, InternalCacheEntry> evicted) {
+   public void onEntryEviction(Map<Object, CacheEntry> evicted) {
       // don't reuse the threadlocal context as we don't want to include eviction
       // operations in any ongoing transaction, nor be affected by flags
       // especially see ISPN-1154: it's illegal to acquire locks in a committing transaction
@@ -178,17 +178,8 @@ public class EvictionManagerImpl implements EvictionManager {
    }
    
    @Override
-   public void onEntryExpiration(Map<Object, InternalCacheEntry> expired) {
-	      // don't reuse the threadlocal context as we don't want to include eviction
-	      // operations in any ongoing transaction, nor be affected by flags
-	      // especially see ISPN-1154: it's illegal to acquire locks in a committing transaction
-	      InvocationContext ctx = ImmutableContext.INSTANCE;
-	      // This is important because we make no external guarantees on the thread
-	      // that will execute this code, so it could be the user thread, or could
-	      // be the eviction thread.
-	      // However, when a user calls cache.evict(), you do want to carry over the
-	      // contextual information, hence it makes sense for the notifyyCacheEntriesEvicted()
-	      // call to carry on taking an InvocationContext object.
-	      cacheNotifier.notifyCacheEntriesExpired(expired.values(), ctx);
+   public void onEntryExpiration(Map<Object, CacheEntry> expired) {
+      InvocationContext ctx = ImmutableContext.INSTANCE;
+      cacheNotifier.notifyCacheEntriesExpired(expired.values(), ctx);
    }
 }

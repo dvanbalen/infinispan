@@ -79,8 +79,7 @@ public class CacheMgmtInterceptor extends JmxStatsCommandInterceptor {
    private DataContainer dataContainer;
 
    private static final Log log = LogFactory.getLog(CacheMgmtInterceptor.class);
-   private static boolean debug = log.isDebugEnabled();
-   private static boolean trace = log.isTraceEnabled();
+   private static final boolean trace = log.isTraceEnabled();
 
     private CacheNotifier cacheNotifier = null;
 

@@ -26,7 +26,7 @@ import java.util.Map;
 
 import net.jcip.annotations.ThreadSafe;
 
-import org.infinispan.container.entries.InternalCacheEntry;
+import org.infinispan.container.entries.CacheEntry;
 import org.infinispan.factories.scopes.Scope;
 import org.infinispan.factories.scopes.Scopes;
 
@@ -58,6 +58,6 @@ public interface EvictionManager {
     */
    boolean isEnabled();
 
-   void onEntryEviction(Map<Object, InternalCacheEntry> evicted);
-   void onEntryExpiration(Map<Object, InternalCacheEntry> expired);
+   void onEntryEviction(Map<Object, CacheEntry> evicted);
+   void onEntryExpiration(Map<Object, CacheEntry> expired);
 }

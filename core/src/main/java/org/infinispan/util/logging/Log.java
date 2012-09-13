@@ -885,4 +885,8 @@ public interface Log extends BasicLogger {
    @LogMessage(level = WARN)
    @Message(value = "Error updating cluster member list", id = 197)
    void errorUpdatingMembersList(@Cause Throwable cause);
+
+   @LogMessage(level = INFO)
+   @Message(value = "Unable to get object size using Libra, so reverting to object count. To track object size, make sure JBoss Libra is on the system classpath, or the server is started with -javaagent:<path-to-libra>. Error was: %s", id = 198)
+   void unableToInvokeLibraAgent(String libraError);
 }

@@ -23,7 +23,7 @@
 package org.infinispan.notifications.cachelistener;
 
 import org.infinispan.Cache;
-import org.infinispan.container.entries.InternalCacheEntry;
+import org.infinispan.container.entries.CacheEntry;
 import org.infinispan.context.InvocationContext;
 import org.infinispan.context.impl.TxInvocationContext;
 import org.infinispan.distribution.ch.ConsistentHash;
@@ -191,42 +191,18 @@ public final class CacheNotifierImpl extends AbstractListenerImpl implements Cac
    }
 
    @Override
-   public void notifyCacheEntriesEvicted(Collection<InternalCacheEntry> entries, InvocationContext ctx) {
+   public void notifyCacheEntriesEvicted(Collection<CacheEntry> entries, InvocationContext ctx) {
       if (!entries.isEmpty()) {
          if (!cacheEntriesEvictedListeners.isEmpty()) {
             EventImpl<Object, Object> e = EventImpl.createEvent(cache, CACHE_ENTRY_EVICTED);
-            Map<Object, Object> evictedKeysAndValues = transformCollectionToMap(entries,
-                                                                                new InfinispanCollections.MapMakerFunction<Object, Object, InternalCacheEntry>() {
-                                                                                   @Override
-                                                                                   public Map.Entry<Object, Object> transform(final InternalCacheEntry input) {
-                                                                                      return new Map.Entry<Object, Object>() {
-
-                                                                                         @Override
-                                                                                         public Object getKey() {
-                                                                                            return input.getKey();
-                                                                                         }
-
-                                                                                         @Override
-                                                                                         public Object getValue() {
-                                                                                            return input.getValue();
-                                                                                         }
-
-                                                                                         @Override
-                                                                                         public Object setValue(Object value) {
-                                                                                            throw new UnsupportedOperationException();
-                                                                                         }
-                                                                                      };
-                                                                                   }
-                                                                                }
-            );
-
+            Map<Object, Object> evictedKeysAndValues = getKeysAndValuesMap(entries);
             e.setEntries(evictedKeysAndValues);
             for (ListenerInvocation listener : cacheEntriesEvictedListeners) listener.invoke(e);
          }
 
          // For backward compat
          if (!cacheEntryEvictedListeners.isEmpty()) {
-            for (InternalCacheEntry ice : entries) {
+            for (CacheEntry ice : entries) {
                EventImpl<Object, Object> e = EventImpl.createEvent(cache, CACHE_ENTRY_EVICTED);
                e.setKey(ice.getKey());
                e.setValue(ice.getValue());
@@ -237,42 +213,18 @@ public final class CacheNotifierImpl extends AbstractListenerImpl implements Cac
    }
 
    @Override
-   public void notifyCacheEntriesExpired(Collection<InternalCacheEntry> entries, InvocationContext ctx) {
+   public void notifyCacheEntriesExpired(Collection<CacheEntry> entries, InvocationContext ctx) {
       if (!entries.isEmpty()) {
          if (!cacheEntriesExpiredListeners.isEmpty()) {
             EventImpl<Object, Object> e = EventImpl.createEvent(cache, CACHE_ENTRY_EXPIRED);
-            Map<Object, Object> expiredKeysAndValues = transformCollectionToMap(entries,
-                                                                                new InfinispanCollections.MapMakerFunction<Object, Object, InternalCacheEntry>() {
-                                                                                   @Override
-                                                                                   public Map.Entry<Object, Object> transform(final InternalCacheEntry input) {
-                                                                                      return new Map.Entry<Object, Object>() {
-
-                                                                                         @Override
-                                                                                         public Object getKey() {
-                                                                                            return input.getKey();
-                                                                                         }
-
-                                                                                         @Override
-                                                                                         public Object getValue() {
-                                                                                            return input.getValue();
-                                                                                         }
-
-                                                                                         @Override
-                                                                                         public Object setValue(Object value) {
-                                                                                            throw new UnsupportedOperationException();
-                                                                                         }
-                                                                                      };
-                                                                                   }
-                                                                                }
-            );
-
+            Map<Object, Object> expiredKeysAndValues = getKeysAndValuesMap(entries);
             e.setEntries(expiredKeysAndValues);
             for (ListenerInvocation listener : cacheEntriesExpiredListeners) listener.invoke(e);
          }
 
          // For backward compat
          if (!cacheEntryEvictedListeners.isEmpty()) {
-            for (InternalCacheEntry ice : entries) {
+            for (CacheEntry ice : entries) {
                EventImpl<Object, Object> e = EventImpl.createEvent(cache, CACHE_ENTRY_EVICTED);
                e.setKey(ice.getKey());
                e.setValue(ice.getValue());
@@ -403,5 +355,33 @@ public final class CacheNotifierImpl extends AbstractListenerImpl implements Cac
          e.setConsistentHashAtEnd(newConsistentHash);
          for (ListenerInvocation listener : topologyChangedListeners) listener.invoke(e);
       }
+   }
+
+   private Map<Object, Object> getKeysAndValuesMap(Collection<CacheEntry> entries) {
+            Map<Object, Object> evictedKeysAndValues = transformCollectionToMap(entries,
+                                                                                new InfinispanCollections.MapMakerFunction<Object, Object, CacheEntry>() {
+                                                                                   @Override
+                                                                                   public Map.Entry<Object, Object> transform(final CacheEntry input) {
+                                                                                      return new Map.Entry<Object, Object>() {
+
+                                                                                         @Override
+                                                                                         public Object getKey() {
+                                                                                            return input.getKey();
+                                                                                         }
+
+                                                                                         @Override
+                                                                                         public Object getValue() {
+                                                                                            return input.getValue();
+                                                                                         }
+
+                                                                                         @Override
+                                                                                         public Object setValue(Object value) {
+                                                                                            throw new UnsupportedOperationException();
+                                                                                         }
+                                                                                      };
+                                                                                   }
+                                                                                }
+            );
+      return evictedKeysAndValues;
    }
 }

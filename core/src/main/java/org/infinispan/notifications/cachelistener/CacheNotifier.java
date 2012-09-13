@@ -22,7 +22,7 @@
  */
 package org.infinispan.notifications.cachelistener;
 
-import org.infinispan.container.entries.InternalCacheEntry;
+import org.infinispan.container.entries.CacheEntry;
 import org.infinispan.context.InvocationContext;
 import org.infinispan.distribution.ch.ConsistentHash;
 import org.infinispan.factories.scopes.Scope;
@@ -64,12 +64,12 @@ public interface CacheNotifier extends Listenable {
    /**
     * Notifies all registered listeners of a CacheEntriesExpired event.
     */
-   void notifyCacheEntriesExpired(Collection<InternalCacheEntry> entries, InvocationContext ctx);
+   void notifyCacheEntriesExpired(Collection<CacheEntry> entries, InvocationContext ctx);
 
    /**
     * Notifies all registered listeners of a CacheEntriesEvicted event.
     */
-   void notifyCacheEntriesEvicted(Collection<InternalCacheEntry> entries, InvocationContext ctx);
+   void notifyCacheEntriesEvicted(Collection<CacheEntry> entries, InvocationContext ctx);
 
    /**
     * Syntactic sugar
