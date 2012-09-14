@@ -1,9 +1,11 @@
 package org.infinispan.interceptors;
 
-import java.util.HashMap;
+import org.infinispan.util.concurrent.ConcurrentMapFactory;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.lang.Class;
 
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachelistener.annotation.CacheEntriesEvicted;
@@ -37,8 +39,8 @@ import org.rhq.helpers.pluginAnnotations.agent.Operation;
 @MBean(objectName = "MemoryUsage", description = "Measures memory usage for cache, either through JBoss Libra Java Agent or by simple object counts")
 public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
 
-   protected Map<String, AtomicLong> usageMap = new HashMap<String, AtomicLong>();
-   protected Map<Object, MemoryUsageKeyEntry> sizeMap = new HashMap<Object, MemoryUsageKeyEntry>();
+   protected ConcurrentMap<Class<?>, Long> usageMap;
+   protected Map<Object, MemoryUsageKeyEntry> sizeMap;
    protected AtomicLong totalSize = new AtomicLong(0);
 
    private boolean useAgent = true;
@@ -60,6 +62,9 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
    @Start
    public void start() {
       cacheNotifier.addListener(this);
+      int concurrencyLevel = cacheConfiguration.locking().concurrencyLevel();
+      usageMap = ConcurrentMapFactory.makeConcurrentMap(32, concurrencyLevel);
+      sizeMap = ConcurrentMapFactory.makeConcurrentMap(32, concurrencyLevel);
    }
 
    // Map.put(key,value) :: oldValue
@@ -164,7 +169,7 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
    @ManagedAttribute(description = "string representation of memory usage, or object count, per object type")
    @Metric(displayName = "Memory use, or object count, per object type", measurementType = MeasurementType.TRENDSUP, displayType = DisplayType.SUMMARY)
    public String getMemoryUsage() {
-      return getMemoryUsageAsString();
+      return usageMap.toString();
    }
 
    @ManagedAttribute(description = "total memory used, or object count, across all object types")
@@ -225,21 +230,19 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
    private void handleAddOrUpdate(Object key, Object value) {
       long size = 0L;
       long oldSize = 0L;
+      Long classSize = null;
       MemoryUsageKeyEntry keyEntry = null;
-      String objType = value.getClass().getName();
+      Class<?> objType = value.getClass();
 
+      // fetch weight of value, based on configured metric type
       size = getMemoryUsage(value);
+      // Get current size of stored objects of same type
+      classSize = usageMap.get(objType);
 
       if (trace) log.tracef("Handling add or update for value with key '%s', size '%d' and type '%s'.", key, size, objType);
 
-      // Initialize map entry for object type, if necessary
-      if (!usageMap.containsKey(objType)) {
-         if (trace) log.tracef("Initializing map entry for object type '%s'.", objType);
-         usageMap.put(objType, new AtomicLong(0));
-      }
-
       // Now that usageMap entry should have been initialized, print trace info.
-      if (trace) log.tracef("Total size BEFORE object add or update is '%d' and size for type '%s' is now '%d'.", totalSize.get(), objType, usageMap.get(objType).get());
+      if (trace) log.tracef("Total size before object add or update is '%d' and size for type '%s' is now '%d'.", totalSize.get(), objType, usageMap.get(objType));
 
       // If value is being updated for existing key, previous value should be subtracted
       if (sizeMap.containsKey(key)) {
@@ -248,25 +251,28 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
          // Update stored size value for key
          keyEntry.getSize().set(size);
          // Subtract key's previous stored size value from running totals
-         usageMap.get(objType).getAndAdd(0 - oldSize);
+         if(classSize != null) {
+            usageMap.put(objType, classSize - oldSize);
+         }
          totalSize.getAndAdd(0 - oldSize);
          if (trace) log.tracef("Updating memory usage for key '%s'. Subtracting '%d' from size.", key, oldSize);
       } else { // store size value for new cache entry
          if (trace) log.tracef("Tracking new cache entry with key '%s', type '%s' and size '%d'", key, objType, size);
-         keyEntry = new MemoryUsageKeyEntry(key, objType, size);
+         keyEntry = new MemoryUsageKeyEntry(key, size);
          sizeMap.put(key, keyEntry);
       }
 
       // Add new size to running totals
-      usageMap.get(objType).getAndAdd(size);
+      usageMap.put(objType, (classSize!=null)?(classSize + size):size);
       totalSize.getAndAdd(size);
 
-      if (trace) log.tracef("Total size AFTER object add or update is '%d' and size for type '%s' is now '%d'.", totalSize.get(), objType, usageMap.get(objType).get());
+      if (trace) log.tracef("Total size after object add or update is '%d' and size for type '%s' is now '%d'.", totalSize.get(), objType, usageMap.get(objType));
    }
 
    private void handleRemove(Object key) {
       MemoryUsageKeyEntry keyEntry = null;
-      String objType;
+      Class<?> objType;
+      Long classSize = null;
       long size = 0L;
 
       if (trace) log.tracef("In handleRemove for key '%s'", key);
@@ -276,14 +282,14 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
 
          // stop tracking removed entry
          keyEntry = sizeMap.get(key);
-         objType = keyEntry.getType();
+         objType = keyEntry.getKey().getClass();
          size = keyEntry.getSize().get();
          sizeMap.remove(key);
 
          if (trace) log.tracef("After remove, sizeMap has '%d' entries.", sizeMap.size());
 
          if (trace) log.tracef("Handling remove for object with key '%s', type '%s' and size '%d'", key, objType, size);
-         if (trace) log.tracef("Total size BEFORE object remove is '%d' and size for type '%s' is now '%d'.", totalSize.get(), objType, usageMap.get(objType).get());
+         if (trace) log.tracef("Total size before object remove is '%d' and size for type '%s' is now '%d'.", totalSize.get(), objType, usageMap.get(objType));
       } else {
          if (debug) log.debugf("Was asked to process removal of entry with key '%s', which isn't being tracked. Doing nothing.", key);
          return;
@@ -291,18 +297,17 @@ public class MemoryUsageInterceptor extends JmxStatsCommandInterceptor {
 
       if (usageMap.containsKey(objType)) {
           // subtract size of removed entry from running totals
-          usageMap.get(objType).getAndAdd(0 - size);
+    	  classSize = usageMap.get(objType);
+    	  if(classSize != null && classSize > 0L) {
+             usageMap.put(objType, classSize - size);
+    	  }
           totalSize.getAndAdd(0 - size);
       } else {
           if (debug) log.debugf("Was asked to process removal of entry with key '%s' and of type '%s', but that type isn't being tracked. Total for type will not be decremented.", key, objType);
           return;
       }
 
-      if (trace) log.tracef("Total size AFTER object remove is '%d' and size for type '%s' is now '%d'.", totalSize.get(), objType, usageMap.get(objType).get());
+      if (trace)
+         log.tracef("Total size after object remove is '%d' and size for type '%s' is now '%d'.", totalSize.get(), objType, usageMap.get(objType));
    }
-
-   public String getMemoryUsageAsString() {
-      return usageMap.toString();
-   }
-
 }

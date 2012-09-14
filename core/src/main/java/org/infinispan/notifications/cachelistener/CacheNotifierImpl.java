@@ -50,7 +50,7 @@ import static org.infinispan.util.InfinispanCollections.transformCollectionToMap
 
 /**
  * Helper class that handles all notifications to registered listeners.
- *
+ * 
  * @author Manik Surtani (manik AT infinispan DOT org)
  * @author Mircea.Markus@jboss.com
  * @since 4.0
@@ -358,30 +358,30 @@ public final class CacheNotifierImpl extends AbstractListenerImpl implements Cac
    }
 
    private Map<Object, Object> getKeysAndValuesMap(Collection<CacheEntry> entries) {
-            Map<Object, Object> evictedKeysAndValues = transformCollectionToMap(entries,
-                                                                                new InfinispanCollections.MapMakerFunction<Object, Object, CacheEntry>() {
-                                                                                   @Override
-                                                                                   public Map.Entry<Object, Object> transform(final CacheEntry input) {
-                                                                                      return new Map.Entry<Object, Object>() {
+      Map<Object, Object> evictedKeysAndValues = transformCollectionToMap(
+            entries,
+            new InfinispanCollections.MapMakerFunction<Object, Object, CacheEntry>() {
+               @Override
+               public Map.Entry<Object, Object> transform(final CacheEntry input) {
+                  return new Map.Entry<Object, Object>() {
 
-                                                                                         @Override
-                                                                                         public Object getKey() {
-                                                                                            return input.getKey();
-                                                                                         }
+                     @Override
+                     public Object getKey() {
+                        return input.getKey();
+                     }
 
-                                                                                         @Override
-                                                                                         public Object getValue() {
-                                                                                            return input.getValue();
-                                                                                         }
+                     @Override
+                     public Object getValue() {
+                        return input.getValue();
+                     }
 
-                                                                                         @Override
-                                                                                         public Object setValue(Object value) {
-                                                                                            throw new UnsupportedOperationException();
-                                                                                         }
-                                                                                      };
-                                                                                   }
-                                                                                }
-            );
+                     @Override
+                     public Object setValue(Object value) {
+                        throw new UnsupportedOperationException();
+                     }
+                  };
+               }
+            });
       return evictedKeysAndValues;
    }
 }
