@@ -45,6 +45,7 @@ import org.infinispan.commands.tx.RollbackCommand;
 import org.infinispan.commands.tx.VersionedCommitCommand;
 import org.infinispan.commands.tx.VersionedPrepareCommand;
 import org.infinispan.commands.write.*;
+import org.infinispan.container.entries.CacheEntry;
 import org.infinispan.container.versioning.EntryVersion;
 import org.infinispan.context.Flag;
 import org.infinispan.distexec.mapreduce.Mapper;
@@ -204,7 +205,7 @@ public interface CommandsFactory {
     * @param key key to expire
     * @return an ExpireCommand
     */
-   ExpireCommand buildExpireCommand(Collection<InternalCacheEntry> entries);
+   ExpireCommand buildExpireCommand(Collection<CacheEntry> entries);
 
    /**
     * Builds a PrepareCommand

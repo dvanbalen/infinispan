@@ -61,6 +61,7 @@ import org.infinispan.commands.write.WriteCommand;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.container.DataContainer;
 import org.infinispan.container.InternalEntryFactory;
+import org.infinispan.container.entries.CacheEntry;
 import org.infinispan.container.versioning.EntryVersion;
 import org.infinispan.context.Flag;
 import org.infinispan.context.InvocationContextContainer;
@@ -255,7 +256,7 @@ public class CommandsFactoryImpl implements CommandsFactory {
    }
 
    @Override
-   public ExpireCommand buildExpireCommand(Collection<InternalCacheEntry> entries) {
+   public ExpireCommand buildExpireCommand(Collection<CacheEntry> entries) {
       return new ExpireCommand(entries, notifier);
    }
 
